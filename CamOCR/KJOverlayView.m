@@ -41,6 +41,7 @@ CGPoint AnchorPoint;
     self.pTopRight = CGPointMake(CGRectGetMidX(self.bounds) + 80, CGRectGetMidY(self.bounds) - 24 - 32);
     self.pBottomLeft = CGPointMake(CGRectGetMidX(self.bounds) - 80, CGRectGetMidY(self.bounds) + 24 - 32);
     self.pBottomRight = CGPointMake(CGRectGetMidX(self.bounds) + 80, CGRectGetMidY(self.bounds) + 24 - 32);
+    [self setNeedsDisplay];
 }
 
 - (CGRect)focusRect
