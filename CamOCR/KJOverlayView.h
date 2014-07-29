@@ -14,6 +14,7 @@
 @property (nonatomic, assign) CGPoint pTopRight;
 @property (nonatomic, assign) CGPoint pBottomLeft;
 @property (nonatomic, assign) CGPoint pBottomRight;
+@property (nonatomic) NSString *textResult;
 
 - (void)resetPoints;
 - (CGRect)focusRect;

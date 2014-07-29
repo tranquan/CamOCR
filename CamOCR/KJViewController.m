@@ -13,8 +13,9 @@
 
 #import "KJCamPreviewView.h"
 #import "KJOverlayView.h"
+#import "Tesseract.h"
 
-@interface KJViewController ()<AVCaptureVideoDataOutputSampleBufferDelegate>
+@interface KJViewController ()<AVCaptureVideoDataOutputSampleBufferDelegate, TesseractDelegate>
 
 // UI
 @property (weak, nonatomic) IBOutlet UIImageView *imageView;
@@ -34,6 +35,11 @@
 @property (nonatomic) BOOL lockInterfaceRotation;
 @property (nonatomic) id runtimeErrorHandlingObserver;
 
+// Tesseract
+@property (nonatomic) Tesseract *tesseract;
+@property (nonatomic) UIImage *textImage;
+@property (nonatomic, assign) BOOL tesseractReady;
+
 @end
 
 @implementation KJViewController
@@ -48,6 +54,7 @@
     [super viewDidLoad];
     
     [self setupCaptureSession];
+    [self setupTesseract];
 }
 
 - (void)viewWillAppear:(BOOL)animated
@@ -87,6 +94,38 @@
 - (IBAction)btnResetClicked:(id)sender
 {
     [self.overlayView resetPoints];
+}
+
+#pragma mark - Tesseract
+
+- (void)setupTesseract
+{
+    self.tesseract = [[Tesseract alloc] initWithLanguage:@"eng"];
+    self.tesseract.delegate = self;
+    self.tesseractReady = YES;
+}
+
+- (void)recognizeImageWithTesseract
+{
+    if (self.textImage) {
+        self.tesseractReady = NO;
+        [self.tesseract setImage:self.textImage];
+        [self.tesseract recognize];
+        NSString *text = [self.tesseract recognizedText];
+        dispatch_async(dispatch_get_main_queue(), ^{
+            self.overlayView.textResult = text;
+            [self.overlayView setNeedsDisplay];
+        });
+        self.tesseractReady = YES;
+    }
+}
+
+#pragma mark Tesseract Delegate
+
+- (BOOL)shouldCancelImageRecognitionForTesseract:(Tesseract *)tesseract
+{
+    DLog(@"progress: %d", tesseract.progress);
+    return NO;
 }
 
 #pragma mark - AVCapture
@@ -238,11 +277,20 @@ didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
         else {
             rect.origin.x += (image.size.width - (self.view.bounds.size.width * ImageScreenRatio))/2;
         }
+        
         CGImageRef smallImgRef = CGImageCreateWithImageInRect(image.CGImage, rect);
         UIImage *smallImage = [UIImage imageWithCGImage:smallImgRef];
+        
         dispatch_async(dispatch_get_main_queue(), ^{
             [self.imageView setImage:smallImage];
         });
+        
+        if (self.tesseractReady) {
+            self.textImage = [UIImage imageWithCGImage:smallImgRef scale:2 orientation:UIImageOrientationUp];
+            dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^(void){
+                [self recognizeImageWithTesseract];
+            });
+        }
     }
 }
 

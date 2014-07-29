@@ -87,6 +87,16 @@ CGPoint AnchorPoint;
     CGContextSetFillColorWithColor(context, [UIColor redColor].CGColor);
     CGContextFillEllipseInRect(context, CGRectMake((self.pTopLeft.x+self.pTopRight.x)/2-4, (self.pTopLeft.y+self.pBottomLeft.y)/2-4,
                                                    AnchorPointRadius+AnchorPointRadius, AnchorPointRadius+AnchorPointRadius));
+    
+    // draw text
+    if (self.textResult.length > 0) {
+        CGContextSetFillColorWithColor(context, [UIColor yellowColor].CGColor);
+        CGContextSetTextMatrix(context, CGAffineTransformMake(1.0,0.0, 0.0, -1.0, 0.0, 0.0));
+        CGContextSelectFont(context, "Helvetica", 12.0, kCGEncodingMacRoman);
+        CGContextSetCharacterSpacing(context, 1.7);
+        CGContextSetTextDrawingMode(context, kCGTextFill);
+        CGContextShowTextAtPoint(context, self.pBottomLeft.x, self.pBottomLeft.y + 24, self.textResult.UTF8String, 12);
+    }
 }
 
 - (void)handlePress:(UILongPressGestureRecognizer *)gesture
