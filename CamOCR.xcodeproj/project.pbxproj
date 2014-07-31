@@ -22,6 +22,7 @@
 		741695E519849F4F0030C0B6 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 741695E319849F4E0030C0B6 /* InfoPlist.strings */; };
 		741695E719849F4F0030C0B6 /* CamOCRTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 741695E619849F4F0030C0B6 /* CamOCRTests.m */; };
 		741695F11984A3BA0030C0B6 /* AVFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 741695F01984A3BA0030C0B6 /* AVFoundation.framework */; };
+		7467E33B1989FD77009873E4 /* CoreText.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7467E33A1989FD77009873E4 /* CoreText.framework */; };
 		748D8DDF1984B603006A1F6B /* CoreImage.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 748D8DDD1984B603006A1F6B /* CoreImage.framework */; };
 		748D8DE01984B603006A1F6B /* CoreMedia.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 748D8DDE1984B603006A1F6B /* CoreMedia.framework */; };
 		748D8DE61984BB59006A1F6B /* KJCamPreviewView.m in Sources */ = {isa = PBXBuildFile; fileRef = 748D8DE51984BB59006A1F6B /* KJCamPreviewView.m */; };
@@ -64,6 +65,7 @@
 		741695E419849F4F0030C0B6 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		741695E619849F4F0030C0B6 /* CamOCRTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = CamOCRTests.m; sourceTree = "<group>"; };
 		741695F01984A3BA0030C0B6 /* AVFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVFoundation.framework; path = System/Library/Frameworks/AVFoundation.framework; sourceTree = SDKROOT; };
+		7467E33A1989FD77009873E4 /* CoreText.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreText.framework; path = System/Library/Frameworks/CoreText.framework; sourceTree = SDKROOT; };
 		748D8DDD1984B603006A1F6B /* CoreImage.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreImage.framework; path = System/Library/Frameworks/CoreImage.framework; sourceTree = SDKROOT; };
 		748D8DDE1984B603006A1F6B /* CoreMedia.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreMedia.framework; path = System/Library/Frameworks/CoreMedia.framework; sourceTree = SDKROOT; };
 		748D8DE41984BB59006A1F6B /* KJCamPreviewView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = KJCamPreviewView.h; sourceTree = "<group>"; };
@@ -220,7 +222,7 @@
 		BAEFE9D41987968D007693C5 /* werdit.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = werdit.h; sourceTree = "<group>"; };
 		BAEFE9D61987968D007693C5 /* liblept.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = liblept.a; sourceTree = "<group>"; };
 		BAEFE9D71987968D007693C5 /* libtesseract_all.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libtesseract_all.a; sourceTree = "<group>"; };
-		BAEFE9E019879F87007693C5 /* tessdata */ = {isa = PBXFileReference; lastKnownFileType = folder; name = tessdata; path = CamOCR/tessdata; sourceTree = "<group>"; };
+		BAEFE9E019879F87007693C5 /* tessdata */ = {isa = PBXFileReference; lastKnownFileType = folder; path = tessdata; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -228,6 +230,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				7467E33B1989FD77009873E4 /* CoreText.framework in Frameworks */,
 				BAEFE939198794DF007693C5 /* libstdc++.6.0.9.dylib in Frameworks */,
 				748D8DDF1984B603006A1F6B /* CoreImage.framework in Frameworks */,
 				BAEFE9D91987968D007693C5 /* libtesseract_all.a in Frameworks */,
@@ -256,7 +259,6 @@
 		741695AF19849F4E0030C0B6 = {
 			isa = PBXGroup;
 			children = (
-				BAEFE9E019879F87007693C5 /* tessdata */,
 				741695C119849F4E0030C0B6 /* CamOCR */,
 				741695E019849F4E0030C0B6 /* CamOCRTests */,
 				741695BA19849F4E0030C0B6 /* Frameworks */,
@@ -277,6 +279,7 @@
 			isa = PBXGroup;
 			children = (
 				BAEFE938198794DF007693C5 /* libstdc++.6.0.9.dylib */,
+				7467E33A1989FD77009873E4 /* CoreText.framework */,
 				748D8DDD1984B603006A1F6B /* CoreImage.framework */,
 				748D8DDE1984B603006A1F6B /* CoreMedia.framework */,
 				741695F01984A3BA0030C0B6 /* AVFoundation.framework */,
@@ -516,6 +519,7 @@
 		BAEFE9DF19879928007693C5 /* TesseractOCR */ = {
 			isa = PBXGroup;
 			children = (
+				BAEFE9E019879F87007693C5 /* tessdata */,
 				BAEFE93C19879672007693C5 /* Tesseract.h */,
 				BAEFE93D19879672007693C5 /* Tesseract.mm */,
 				BAEFE9411987968C007693C5 /* include */,

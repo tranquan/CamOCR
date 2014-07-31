@@ -8,12 +8,13 @@
 
 #import "KJOverlayView.h"
 #import <QuartzCore/QuartzCore.h>
+#import <CoreText/CoreText.h>
 
 CGFloat const AnchorPointRadius = 4;
 CGFloat const CenterPointRadius = 4;
 CGFloat LineR = 0, LineG = 1, LineB = 0;
-NSInteger AnchorPosition;
-CGPoint AnchorPoint;
+NSInteger touchPosition;
+CGPoint touchPoint;
 
 @implementation KJOverlayView
 
@@ -29,7 +30,7 @@ CGPoint AnchorPoint;
 - (void)awakeFromNib
 {
     self.opaque = NO;
-    
+    self.textFont = [UIFont fontWithName:@"STHeitiSC-Medium" size:12];
     UILongPressGestureRecognizer *pressGesture = [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(handlePress:)];
     pressGesture.minimumPressDuration = 0.45;
     [self addGestureRecognizer:pressGesture];
@@ -89,13 +90,35 @@ CGPoint AnchorPoint;
                                                    AnchorPointRadius+AnchorPointRadius, AnchorPointRadius+AnchorPointRadius));
     
     // draw text
+    CGGlyph glyphs[self.textResult.length];
+    CGGlyph glyphsGood[self.textGoodResult.length];
+    CTFontRef fontRef = CTFontCreateWithName((CFStringRef)self.textFont.fontName, self.textFont.pointSize, NULL);
+    CTFontGetGlyphsForCharacters(fontRef, (const unichar *)[self.textResult cStringUsingEncoding:NSUnicodeStringEncoding], glyphs, self.textResult.length);
+    CTFontGetGlyphsForCharacters(fontRef, (const unichar *)[self.textResult cStringUsingEncoding:NSUnicodeStringEncoding], glyphsGood, self.textGoodResult.length);
+    
+    // draw normal result
     if (self.textResult.length > 0) {
         CGContextSetFillColorWithColor(context, [UIColor yellowColor].CGColor);
-        CGContextSetTextMatrix(context, CGAffineTransformMake(1.0,0.0, 0.0, -1.0, 0.0, 0.0));
-        CGContextSelectFont(context, "Helvetica", 12.0, kCGEncodingMacRoman);
+        CGContextSelectFont(context, "STHeitiSC-Medium", 12.0, kCGEncodingMacRoman);
         CGContextSetCharacterSpacing(context, 1.7);
+        CGContextSetTextMatrix(context, CGAffineTransformMake(1.0,0.0, 0.0, -1.0, 0.0, 0.0));
         CGContextSetTextDrawingMode(context, kCGTextFill);
-        CGContextShowTextAtPoint(context, self.pBottomLeft.x, self.pBottomLeft.y + 24, self.textResult.UTF8String, 12);
+        CGContextShowGlyphsAtPoint(context, 32, self.pBottomLeft.y + 24, glyphs, self.textResult.length);
+    }
+    // draw good result
+    if (self.textGoodResult.length > 0) {
+        CGContextSetFillColorWithColor(context, [UIColor greenColor].CGColor);
+        CGContextShowGlyphsAtPoint(context, 32, self.pBottomLeft.y + 48, glyphsGood, self.textGoodResult.length);
+    }
+    // draw mean
+    if (self.meanConf.length > 0) {
+        CGContextSelectFont(context, "Helvetica", 12.0, kCGEncodingMacRoman);
+        CGContextSetFillColorWithColor(context, [UIColor yellowColor].CGColor);
+        CGContextShowTextAtPoint(context, 32, self.pTopLeft.y - 24, self.meanConf.UTF8String, self.meanConf.length);
+    }
+    // draw word means
+    if (self.wordConfs.length > 0) {
+        CGContextShowTextAtPoint(context, 32, self.pTopLeft.y - 48, self.wordConfs.UTF8String, self.wordConfs.length);
     }
 }
 
@@ -109,41 +132,41 @@ CGPoint AnchorPoint;
         int anchor = -1;
         if ([self distanceFromPoint:touch toPoint:self.pTopLeft] < distance) {
             anchor = 1;
-            AnchorPoint = self.pTopLeft;
+            touchPoint = self.pTopLeft;
         }
         else if ([self distanceFromPoint:touch toPoint:self.pTopRight] < distance) {
             anchor = 2;
-            AnchorPoint = self.pTopRight;
+            touchPoint = self.pTopRight;
         }
         else if ([self distanceFromPoint:touch toPoint:self.pBottomLeft] < distance) {
             anchor = 3;
-            AnchorPoint = self.pBottomLeft;
+            touchPoint = self.pBottomLeft;
         }
         else if ([self distanceFromPoint:touch toPoint:self.pBottomRight] < distance) {
             anchor = 4;
-            AnchorPoint = self.pBottomRight;
+            touchPoint = self.pBottomRight;
         }
         else if ([self distanceFromPoint:touch toPoint:[self centerPoint]] < distance) {
             anchor = 5;
-            AnchorPoint = [self centerPoint];
+            touchPoint = [self centerPoint];
         }
         
         if (anchor > 0) {
             LineR = 1; LineG = 0; LineB = 0;
-            AnchorPosition = anchor;
+            touchPosition = anchor;
             [self setNeedsDisplay];
         }
     }
     else if (gesture.state == UIGestureRecognizerStateChanged) {
         
-        if (AnchorPoint.x > 0 && AnchorPoint.y > 0) {
+        if (touchPoint.x > 0 && touchPoint.y > 0) {
             
-            if (AnchorPosition == 5)
+            if (touchPosition == 5)
             {
-                float dx = touch.x - AnchorPoint.x;
-                float dy = touch.y - AnchorPoint.y;
+                float dx = touch.x - touchPoint.x;
+                float dy = touch.y - touchPoint.y;
                 
-                AnchorPoint = touch;
+                touchPoint = touch;
                 self.pTopLeft = CGPointMake(self.pTopLeft.x+dx, self.pTopLeft.y+dy);
                 self.pTopRight = CGPointMake(self.pTopRight.x+dx, self.pTopRight.y+dy);
                 self.pBottomLeft = CGPointMake(self.pBottomLeft.x+dx, self.pBottomLeft.y+dy);
@@ -153,19 +176,19 @@ CGPoint AnchorPoint;
             }
             else
             {
-                float dx = touch.x - AnchorPoint.x;
-                float dy = touch.y - AnchorPoint.y;
+                float dx = touch.x - touchPoint.x;
+                float dy = touch.y - touchPoint.y;
                 CGRect guide = CGRectMake(self.pTopLeft.x, self.pTopLeft.y,
                                           self.pTopRight.x-self.pTopLeft.x,
                                           self.pBottomLeft.y-self.pTopLeft.y);
                 
-                if (AnchorPoint.x < CGRectGetMidX(guide)) dx = -dx;
-                if (AnchorPoint.y < CGRectGetMidY(guide)) dy = -dy;
+                if (touchPoint.x < CGRectGetMidX(guide)) dx = -dx;
+                if (touchPoint.y < CGRectGetMidY(guide)) dy = -dy;
                 
                 if ((self.pTopRight.x+dx) - (self.pTopLeft.x-dx) > 80 &&
                     (self.pBottomLeft.y+dy) - (self.pTopLeft.y-dy) > 36)
                 {
-                    AnchorPoint = touch;
+                    touchPoint = touch;
                     self.pTopLeft = CGPointMake(self.pTopLeft.x-dx, self.pTopLeft.y-dy);
                     self.pTopRight = CGPointMake(self.pTopRight.x+dx, self.pTopRight.y-dy);
                     self.pBottomLeft = CGPointMake(self.pBottomLeft.x-dx, self.pBottomLeft.y+dy);
@@ -178,8 +201,8 @@ CGPoint AnchorPoint;
     }
     else {
         LineR = 0; LineG = 1; LineB = 0;
-        AnchorPosition = -1;
-        AnchorPoint = CGPointMake(-1000, -1000);
+        touchPosition = -1;
+        touchPoint = CGPointMake(-1000, -1000);
         [self setNeedsDisplay];
     }
 }

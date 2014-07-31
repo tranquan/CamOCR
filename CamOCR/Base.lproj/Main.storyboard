@@ -50,14 +50,20 @@
                             <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" id="Qk6-J1-lqa">
                                 <rect key="frame" x="250" y="520" width="57" height="30"/>
                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
-                                <state key="normal" title="Camera">
+                                <state key="normal" title="Pause">
                                     <color key="titleShadowColor" white="0.5" alpha="1" colorSpace="calibratedWhite"/>
                                 </state>
+                                <connections>
+                                    <action selector="btnTesseractClicked:" destination="vXZ-lx-hvc" eventType="touchUpInside" id="29H-Nq-Fg0"/>
+                                </connections>
                             </button>
                         </subviews>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                     </view>
                     <connections>
+                        <outlet property="btnDict" destination="eb8-Jf-xnW" id="BNp-7k-fem"/>
+                        <outlet property="btnReset" destination="d9r-tx-GBe" id="5WN-Xj-rqV"/>
+                        <outlet property="btnTesseract" destination="Qk6-J1-lqa" id="nrJ-Pm-gwb"/>
                         <outlet property="imageView" destination="3of-pE-RMv" id="Nmo-Gt-7Vt"/>
                         <outlet property="overlayView" destination="GG3-iu-oyR" id="7Y8-fm-Wya"/>
                         <outlet property="previewView" destination="P1M-F9-iSi" id="PGe-wX-Lto"/>

@@ -14,7 +14,12 @@
 @property (nonatomic, assign) CGPoint pTopRight;
 @property (nonatomic, assign) CGPoint pBottomLeft;
 @property (nonatomic, assign) CGPoint pBottomRight;
+
+@property (nonatomic) UIFont *textFont;
+@property (nonatomic) NSString *textGoodResult;
 @property (nonatomic) NSString *textResult;
+@property (nonatomic) NSString *meanConf;
+@property (nonatomic) NSString *wordConfs;
 
 - (void)resetPoints;
 - (CGRect)focusRect;

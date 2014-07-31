@@ -10,6 +10,7 @@
 
 #import <AVFoundation/AVFoundation.h>
 #import <AssetsLibrary/AssetsLibrary.h>
+#import <mach/mach.h>
 
 #import "KJCamPreviewView.h"
 #import "KJOverlayView.h"
@@ -21,6 +22,9 @@
 @property (weak, nonatomic) IBOutlet UIImageView *imageView;
 @property (nonatomic, weak) IBOutlet KJCamPreviewView *previewView;
 @property (nonatomic, weak) IBOutlet KJOverlayView *overlayView;
+@property (nonatomic, weak) IBOutlet UIButton *btnDict;
+@property (nonatomic, weak) IBOutlet UIButton *btnReset;
+@property (nonatomic, weak) IBOutlet UIButton *btnTesseract;
 
 // Session management
 @property (nonatomic) dispatch_queue_t sessionQueue;
@@ -36,9 +40,9 @@
 @property (nonatomic) id runtimeErrorHandlingObserver;
 
 // Tesseract
-@property (nonatomic) Tesseract *tesseract;
 @property (nonatomic) UIImage *textImage;
-@property (nonatomic, assign) BOOL tesseractReady;
+@property (atomic, assign) BOOL tesseractReady;
+@property (atomic, assign) BOOL tesseractRunning;
 
 @end
 
@@ -72,6 +76,7 @@
 - (void)didReceiveMemoryWarning
 {
     [super didReceiveMemoryWarning];
+    logMemUsage();
 }
 
 - (BOOL)prefersStatusBarHidden
@@ -86,36 +91,53 @@
 
 #pragma mark - Actions
 
-- (IBAction)btnDictClicked:(id)sender
-{
+- (IBAction)btnDictClicked:(id)sender {
     
 }
 
-- (IBAction)btnResetClicked:(id)sender
-{
+- (IBAction)btnResetClicked:(id)sender {
     [self.overlayView resetPoints];
+}
+
+- (IBAction)btnTesseractClicked:(id)sender {
+    self.tesseractRunning = !self.tesseractRunning;
+    if (self.tesseractRunning) {
+        [self.btnTesseract setTitle:@"Pause" forState:UIControlStateNormal];
+    } else {
+        [self.btnTesseract setTitle:@"Start" forState:UIControlStateNormal];
+    }
+    [self.btnTesseract setNeedsDisplay];
 }
 
 #pragma mark - Tesseract
 
 - (void)setupTesseract
 {
-    self.tesseract = [[Tesseract alloc] initWithLanguage:@"eng"];
-    self.tesseract.delegate = self;
+    [[Tesseract sharedInstanced] setLanguage:@"chi_sim"];
+    [[Tesseract sharedInstanced] setDelegate:self];
     self.tesseractReady = YES;
+    self.tesseractRunning = YES;
 }
 
 - (void)recognizeImageWithTesseract
 {
     if (self.textImage) {
         self.tesseractReady = NO;
-        [self.tesseract setImage:self.textImage];
-        [self.tesseract recognize];
-        NSString *text = [self.tesseract recognizedText];
-        dispatch_async(dispatch_get_main_queue(), ^{
-            self.overlayView.textResult = text;
-            [self.overlayView setNeedsDisplay];
-        });
+        [[Tesseract sharedInstanced] setImage:self.textImage];
+        if ([[Tesseract sharedInstanced] recognize]) {
+            NSString *text = [[Tesseract sharedInstanced] recognizedText];
+            NSInteger mean = [[Tesseract sharedInstanced] meanTextConfidence];
+            NSArray *words = [[Tesseract sharedInstanced] allWordConfidences];
+            dispatch_async(dispatch_get_main_queue(), ^{
+                self.overlayView.textResult = text;
+                self.overlayView.meanConf = [NSString stringWithFormat:@"%ld", (long)mean];
+                self.overlayView.wordConfs = [words componentsJoinedByString:@", "];
+                if (mean > 50) {
+                    self.overlayView.textGoodResult = text;
+                }
+                [self.overlayView setNeedsDisplay];
+            });
+        }
         self.tesseractReady = YES;
     }
 }
@@ -124,7 +146,7 @@
 
 - (BOOL)shouldCancelImageRecognitionForTesseract:(Tesseract *)tesseract
 {
-    DLog(@"progress: %d", tesseract.progress);
+//    DLog(@"progress: %d", tesseract.progress);
     return NO;
 }
 
@@ -246,6 +268,8 @@
 didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
        fromConnection:(AVCaptureConnection *)connection
 {
+    if (!self.tesseractRunning) return;
+    
     static float ImageScreenRatio = 1.0;
     static bool MapToWidth = NO;
     static dispatch_once_t onceToken;
@@ -280,13 +304,14 @@ didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
         
         CGImageRef smallImgRef = CGImageCreateWithImageInRect(image.CGImage, rect);
         UIImage *smallImage = [UIImage imageWithCGImage:smallImgRef];
+        CGImageRelease(smallImgRef);
         
         dispatch_async(dispatch_get_main_queue(), ^{
             [self.imageView setImage:smallImage];
         });
         
         if (self.tesseractReady) {
-            self.textImage = [UIImage imageWithCGImage:smallImgRef scale:2 orientation:UIImageOrientationUp];
+            self.textImage = [UIImage imageWithCGImage:smallImage.CGImage scale:2 orientation:UIImageOrientationUp];
             dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^(void){
                 [self recognizeImageWithTesseract];
             });
@@ -294,7 +319,7 @@ didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
     }
 }
 
-- (UIImage *)imageFromSampleBuffer:(CMSampleBufferRef) sampleBuffer
+- (UIImage *)imageFromSampleBuffer:(CMSampleBufferRef)sampleBuffer
 {
     // Get a CMSampleBuffer's Core Video image buffer for the media data
     CVImageBufferRef imageBuffer = CMSampleBufferGetImageBuffer(sampleBuffer);
@@ -348,6 +373,35 @@ didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
             });
         }
     }];
+}
+
+vm_size_t usedMemory(void) {
+    struct task_basic_info info;
+    mach_msg_type_number_t size = sizeof(info);
+    kern_return_t kerr = task_info(mach_task_self(), TASK_BASIC_INFO, (task_info_t)&info, &size);
+    return (kerr == KERN_SUCCESS) ? info.resident_size : 0; // size in bytes
+}
+
+vm_size_t freeMemory(void) {
+    mach_port_t host_port = mach_host_self();
+    mach_msg_type_number_t host_size = sizeof(vm_statistics_data_t) / sizeof(integer_t);
+    vm_size_t pagesize;
+    vm_statistics_data_t vm_stat;
+    
+    host_page_size(host_port, &pagesize);
+    (void) host_statistics(host_port, HOST_VM_INFO, (host_info_t)&vm_stat, &host_size);
+    return vm_stat.free_count * pagesize;
+}
+
+void logMemUsage(void) {
+    static long prevMemUsage = 0;
+    long curMemUsage = usedMemory();
+    long memUsageDiff = curMemUsage - prevMemUsage;
+    
+    if (memUsageDiff > 100000 || memUsageDiff < -100000) {
+        prevMemUsage = curMemUsage;
+        NSLog(@"Memory used %7.1f (%+5.0f), free %7.1f kb", curMemUsage/1000.0f, memUsageDiff/1000.0f, freeMemory()/1000.0f);
+    }
 }
 
 @end

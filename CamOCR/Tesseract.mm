@@ -37,6 +37,15 @@ namespace tesseract {
 
 @implementation Tesseract
 
++ (Tesseract *)sharedInstanced {
+    static Tesseract *instance = nil;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        instance = [[Tesseract alloc] init];
+    });
+    return instance;
+}
+
 + (NSString *)version {
 	return [NSString stringWithFormat:@"%s", tesseract::TessBaseAPI::Version()];
 }
@@ -127,8 +136,6 @@ namespace tesseract {
 	NSString *documentPath = ([documentPaths count] > 0) ? [documentPaths objectAtIndex:0] : nil;
 	NSString *dataPath = [documentPath stringByAppendingPathComponent:_dataPath];
 	
-	//	NSString *dataPath = [[NSBundle mainBundle] pathForResource:@"grc" ofType:@"traineddata"];
-	//
 	NSLog(@"DATAPATH %@", dataPath);
 	
 	// Copy data in Doc Directory
@@ -274,6 +281,22 @@ namespace tesseract {
         }
     }
     return recognizedTextBoxes;
+}
+
+- (NSInteger)meanTextConfidence {
+    return _tesseract->MeanTextConf();
+}
+
+- (NSArray *)allWordConfidences {
+    int *words = _tesseract->AllWordConfidences();
+    NSMutableArray *confidences = [[NSMutableArray alloc] init];
+    int i = 0;
+    while (words[i] != -1) {
+        [confidences addObject:[NSNumber numberWithInt:words[i]]];
+        i++;
+    }
+    delete[] words;
+    return confidences;
 }
 
 - (short)progress {
